@@ -143,7 +143,7 @@ def product_delete(request, pk):
 
 def login(request):
     """
-    Handle user login.
+    Handle user login with tenant session management.
     """
     from django.contrib.auth import authenticate, login as auth_login
     from .forms import TenantAwareAuthenticationForm
@@ -152,7 +152,19 @@ def login(request):
         form = TenantAwareAuthenticationForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
+            
+            # ✅ Check if user has a tenant
+            if not user.tenant:
+                messages.error(request, 'Votre compte n\'est pas associé à un tenant.')
+                return redirect('login')
+            
+            # ✅ Store tenant in session BEFORE logging in
+            request.session['tenant_id'] = user.tenant.id
+            request.session['tenant_domain'] = user.tenant.domain
+            
+            # Log in the user
             auth_login(request, user)
+            
             messages.success(request, f'Bienvenue {user.username}!')
             return redirect('dashboard')
         else:
@@ -165,23 +177,40 @@ def login(request):
 
 def register(request):
     """
-    Handle user registration with AUTO-LOGIN.
+    Handle user registration with AUTO-LOGIN and tenant session.
     """
+    from django.contrib.auth import login as auth_login
+    
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         
         if form.is_valid():
-            # Save user and create tenant
-            user = form.save()
-            # Automatically log in the user
-            login(request, user)
-            
-            messages.success(
-                request, 
-                f'Bienvenue {user.username}! Votre compte a été créé avec succès.'
-            )
-            
-            return redirect('dashboard')
+            try:
+                # Save user and create tenant
+                user = form.save()
+                
+                # ✅ Make sure tenant was created
+                if not user.tenant:
+                    messages.error(request, 'Erreur lors de la création du compte.')
+                    return redirect('register')
+                
+                # ✅ Store tenant in session BEFORE logging in
+                request.session['tenant_id'] = user.tenant.id
+                request.session['tenant_domain'] = user.tenant.domain
+                
+                # ✅ Automatically log in the user with explicit backend
+                auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+                
+                messages.success(
+                    request, 
+                    f'Bienvenue {user.username}! Votre compte a été créé avec succès.'
+                )
+                
+                return redirect('dashboard')
+                
+            except Exception as e:
+                messages.error(request, f'Erreur lors de la création du compte: {str(e)}')
+                return redirect('register')
         else:
             messages.error(request, 'Veuillez corriger les erreurs ci-dessous.')
     else:
