@@ -10,6 +10,8 @@
         padding: 0.5rem 0;
         padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
         z-index: 1000;
+        overflow-x: auto;
+        overflow-y: hidden;
     }
 
     .nav-items {
@@ -17,6 +19,8 @@
         justify-content: space-around;
         max-width: 600px;
         margin: 0 auto;
+        min-width: max-content;
+        padding: 0 0.5rem;
     }
 
     .nav-item {
@@ -26,14 +30,86 @@
         gap: 0.25rem;
         color: var(--text-muted);
         text-decoration: none;
-        padding: 0.5rem 1rem;
+        padding: 0.5rem 0.75rem;
         transition: all 0.2s;
+        flex-shrink: 0;
+        min-width: 60px;
     }
 
-    .nav-item svg { width: 22px; height: 22px; transition: all 0.2s; }
-    .nav-item span { font-size: 0.6875rem; font-weight: 600; }
-    .nav-item.active { color: var(--primary); }
-    .nav-item.active svg { transform: translateY(-2px); }
+    .nav-item svg { 
+        width: 22px; 
+        height: 22px; 
+        transition: all 0.2s; 
+        stroke-width: 2;
+    }
+    
+    .nav-item span { 
+        font-size: 0.6875rem; 
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    
+    .nav-item.active { 
+        color: var(--primary); 
+    }
+    
+    .nav-item.active svg { 
+        transform: translateY(-2px); 
+    }
+
+    /* Mobile specific adjustments */
+    @media (max-width: 768px) {
+        .bottom-nav {
+            padding: 0.4rem 0;
+            padding-bottom: calc(0.4rem + env(safe-area-inset-bottom));
+        }
+
+        .nav-items {
+            justify-content: flex-start;
+            gap: 0.25rem;
+        }
+
+        .nav-item {
+            padding: 0.4rem 0.5rem;
+            min-width: 55px;
+        }
+
+        .nav-item svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .nav-item span {
+            font-size: 0.625rem;
+        }
+    }
+
+    /* Very small screens */
+    @media (max-width: 380px) {
+        .nav-item {
+            padding: 0.4rem 0.4rem;
+            min-width: 50px;
+        }
+
+        .nav-item svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .nav-item span {
+            font-size: 0.5625rem;
+        }
+    }
+
+    /* Hide scrollbar but keep functionality */
+    .bottom-nav::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .bottom-nav {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
 </style>
 
 <nav class="bottom-nav">
@@ -51,7 +127,7 @@
                 <rect x="3" y="13" width="8" height="8" rx="1" ry="1"></rect>
                 <rect x="13" y="13" width="8" height="8" rx="1" ry="1"></rect>
             </svg>
-            <span>categories</span>
+            <span>Catégories</span>
         </a>
         <a href="{% url 'product_list' %}" class="nav-item {% if request.resolver_match.url_name == 'product_list' %}active{% endif %}">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
