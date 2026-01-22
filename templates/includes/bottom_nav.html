@@ -1,0 +1,81 @@
+<style>
+    .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(13, 13, 26, 0.9);
+        backdrop-filter: blur(20px);
+        border-top: 1px solid var(--border);
+        padding: 0.5rem 0;
+        padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+        z-index: 1000;
+    }
+
+    .nav-items {
+        display: flex;
+        justify-content: space-around;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.25rem;
+        color: var(--text-muted);
+        text-decoration: none;
+        padding: 0.5rem 1rem;
+        transition: all 0.2s;
+    }
+
+    .nav-item svg { width: 22px; height: 22px; transition: all 0.2s; }
+    .nav-item span { font-size: 0.6875rem; font-weight: 600; }
+    .nav-item.active { color: var(--primary); }
+    .nav-item.active svg { transform: translateY(-2px); }
+</style>
+
+<nav class="bottom-nav">
+    <div class="nav-items">
+        <a href="{% url 'dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <span>Accueil</span>
+        </a>
+        <a href="{% url 'category_list' %}" class="nav-item {% if request.resolver_match.url_name == 'category_list' %}active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <rect x="3" y="3" width="8" height="8" rx="1" ry="1"></rect>
+                <rect x="13" y="3" width="8" height="8" rx="1" ry="1"></rect>
+                <rect x="3" y="13" width="8" height="8" rx="1" ry="1"></rect>
+                <rect x="13" y="13" width="8" height="8" rx="1" ry="1"></rect>
+            </svg>
+            <span>categories</span>
+        </a>
+        <a href="{% url 'product_list' %}" class="nav-item {% if request.resolver_match.url_name == 'product_list' %}active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            </svg>
+            <span>Produits</span>
+        </a>
+        <a href="{% url 'client_list' %}" class="nav-item {% if request.resolver_match.url_name == 'client_list' %}active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            </svg>
+            <span>Clients</span>
+        </a>
+        <a href="{% url 'order_list' %}" class="nav-item {% if request.resolver_match.url_name == 'order_list' %}active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+            <span>Ventes</span>
+        </a>
+        <a href="{% url 'logout' %}" class="nav-item">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            <span>Sortir</span>
+        </a>
+    </div>
+</nav>

@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if product.pk %}Modifier le produit{% else %}Ajouter un produit{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        {% if product.pk %}
+            Modifier le produit
+        {% else %}
+            Ajouter un produit
+        {% endif %}
+    </h1>
+    <p class="page-subtitle">
+        {% if product.pk %}
+            Mettez à jour les informations du produit
+        {% else %}
+            Ajoutez un nouveau produit à votre catalogue
+        {% endif %}
+    </p>
+</div>
+
+<div class="card">
+    <form method="post" id="productForm" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="id_name" class="form-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 0.5rem;">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                </svg>
+                Nom du produit
+            </label>
+            <input 
+                type="text" 
+                name="name" 
+                id="id_name" 
+                class="form-input" 
+                placeholder="Ex: iPhone 15 Pro Max"
+                value="{{ form.name.value|default:'' }}"
+                required
+            >
+            {% if form.name.errors %}
+                <div class="alert alert-error" style="margin-top: 0.5rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                    <span>{{ form.name.errors.0 }}</span>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="id_category" class="form-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 0.5rem;">
+                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                    <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                </svg>
+                Catégorie
+            </label>
+            <select name="category" id="id_category" class="form-input" required>
+                <option value="">Sélectionnez une catégorie</option>
+                {% for value, label in form.category.field.choices %}
+                    {% if value %}
+                        <option value="{{ value }}" {% if form.category.value == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+            {% if form.category.errors %}
+                <div class="alert alert-error" style="margin-top: 0.5rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                    <span>{{ form.category.errors.0 }}</span>
+                </div>
+            {% endif %}
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label for="id_price" class="form-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 0.5rem;">
+                        <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    </svg>
+                    Prix (FCFA)
+                </label>
+                <input 
+                    type="number" 
+                    name="price" 
+                    id="id_price" 
+                    class="form-input" 
+                    placeholder="Ex: 850000"
+                    value="{{ form.price.value|default:'' }}"
+                    min="0"
+                    step="0.01"
+                    required
+                >
+                {% if form.price.errors %}
+                    <div class="alert alert-error" style="margin-top: 0.5rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                        </svg>
+                        <span>{{ form.price.errors.0 }}</span>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="id_stock" class="form-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 0.5rem;">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
+                    </svg>
+                    Stock
+                </label>
+                <input 
+                    type="number" 
+                    name="stock" 
+                    id="id_stock" 
+                    class="form-input" 
+                    placeholder="Ex: 25"
+                    value="{{ form.stock.value|default:'' }}"
+                    min="0"
+                    required
+                >
+                {% if form.stock.errors %}
+                    <div class="alert alert-error" style="margin-top: 0.5rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                        </svg>
+                        <span>{{ form.stock.errors.0 }}</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="id_description" class="form-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 0.5rem;">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                </svg>
+                Description
+            </label>
+            <textarea 
+                name="description" 
+                id="id_description" 
+                class="form-input" 
+                rows="4"
+                placeholder="Décrivez votre produit en détail..."
+            >{{ form.description.value|default:'' }}</textarea>
+            {% if form.description.errors %}
+                <div class="alert alert-error" style="margin-top: 0.5rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                    <span>{{ form.description.errors.0 }}</span>
+                </div>
+            {% endif %}
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+            <button type="submit" class="btn btn-primary" style="flex: 1;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+                </svg>
+                {% if product.pk %}Mettre à jour{% else %}Créer le produit{% endif %}
+            </button>
+            <a href="{% url 'product_list' %}" class="btn btn-ghost">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+                Annuler
+            </a>
+        </div>
+    </form>
+</div>
+
+{% if product.pk %}
+<div class="card" style="margin-top: 1.5rem; border-color: rgba(239, 68, 68, 0.2);">
+    <div class="card-title" style="color: var(--error); margin-bottom: 1rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 0.5rem;">
+            <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+        Zone dangereuse
+    </div>
+    <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.875rem;">
+        La suppression d'un produit est irréversible. Toutes les données associées seront perdues.
+    </p>
+    <a href="{% url 'product_delete' product.pk %}" class="btn" style="background: rgba(239, 68, 68, 0.1); color: var(--error); border: 1px solid rgba(239, 68, 68, 0.2);">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            <line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+        </svg>
+        Supprimer ce produit
+    </a>
+</div>
+{% endif %}
+
+<style>
+    select.form-input {
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        padding-right: 2.5rem;
+    }
+
+    textarea.form-input {
+        resize: vertical;
+        min-height: 100px;
+        font-family: inherit;
+    }
+
+    @media (max-width: 768px) {
+        div[style*="grid-template-columns"] {
+            grid-template-columns: 1fr !important;
+        }
+    }
+</style>
+
+<script>
+    // Validation en temps réel
+    document.getElementById('productForm').addEventListener('submit', function(e) {
+        const price = document.getElementById('id_price').value;
+        const stock = document.getElementById('id_stock').value;
+        
+        if (price < 0) {
+            e.preventDefault();
+            alert('Le prix ne peut pas être négatif');
+            return false;
+        }
+        
+        if (stock < 0) {
+            e.preventDefault();
+            alert('Le stock ne peut pas être négatif');
+            return false;
+        }
+    });
+
+    // Animation de focus sur les inputs
+    const inputs = document.querySelectorAll('.form-input');
+    inputs.forEach(input => {
+        input.addEventListener('focus', function() {
+            this.style.transform = 'translateY(-1px)';
+        });
+        
+        input.addEventListener('blur', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+</script>
+{% endblock %}

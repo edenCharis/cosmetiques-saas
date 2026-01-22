@@ -1,0 +1,717 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Commande #{{ order.id }} - CosmoSaaS{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 1.5rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+        <a href="{% url 'order_list' %}" class="back-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </a>
+        <div>
+            <h1 class="page-title">Commande #{{ order.id }}</h1>
+            <p class="page-subtitle">{{ order.created_at|date:"d/m/Y à H:i" }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Order Status Card -->
+<div class="card status-card">
+    <div class="status-header">
+        <div class="status-info">
+            <span class="status-label">Statut actuel</span>
+            <span class="order-status status-{{ order.status }}">
+                {% if order.status == 'pending' %}En attente
+                {% elif order.status == 'in_progress' %}En cours
+                {% elif order.status == 'delivered' %}Livré
+                {% endif %}
+            </span>
+        </div>
+        
+        <button class="btn-change-status" onclick="toggleStatusModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 4v6h6"></path>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+            Changer
+        </button>
+    </div>
+    
+    <!-- Status Timeline -->
+    <div class="status-timeline">
+        <div class="timeline-item {% if order.status == 'pending' or order.status == 'in_progress' or order.status == 'delivered' %}active{% endif %}">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content">
+                <div class="timeline-title">Créée</div>
+                <div class="timeline-date">{{ order.created_at|date:"d/m" }}</div>
+            </div>
+        </div>
+        
+        <div class="timeline-item {% if order.status == 'in_progress' or order.status == 'delivered' %}active{% endif %}">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content">
+                <div class="timeline-title">En cours</div>
+            </div>
+        </div>
+        
+        <div class="timeline-item {% if order.status == 'delivered' %}active{% endif %}">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content">
+                <div class="timeline-title">Livré</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Client Information -->
+<div class="card">
+    <div class="card-header-icon">
+        <div class="header-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+        </div>
+        <h2 class="card-title">Client</h2>
+    </div>
+    
+    <div class="client-details">
+        <div class="client-avatar-large">{{ order.client.name|slice:":1"|upper }}</div>
+        <div class="client-info-grid">
+            <div class="info-group">
+                <span class="info-label">Nom</span>
+                <span class="info-value">{{ order.client.name }}</span>
+            </div>
+            <div class="info-group">
+                <span class="info-label">Téléphone</span>
+                <span class="info-value">{{ order.client.phone }}</span>
+            </div>
+            <div class="info-group">
+                <span class="info-label">Quartier</span>
+                <span class="info-value">{{ order.client.area }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Order Items -->
+<div class="card">
+    <div class="card-header-icon">
+        <div class="header-icon accent">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="9" cy="21" r="1"></circle>
+                <circle cx="20" cy="21" r="1"></circle>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            </svg>
+        </div>
+        <h2 class="card-title">Produits</h2>
+    </div>
+    
+    <div class="items-list">
+        {% for item in order.items.all %}
+        <div class="item-row">
+            <div class="item-image">
+                {% if item.product.image %}
+                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                {% else %}
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                        <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                    </svg>
+                {% endif %}
+            </div>
+            <div class="item-details">
+                <div class="item-name">{{ item.product.name }}</div>
+                <div class="item-meta">
+                    <span class="item-category">{{ item.product.category.name }}</span>
+                    <span class="item-separator">•</span>
+                    <span class="item-price">{{ item.price |floatformat:0|intcomma }} FCFA</span>
+                </div>
+            </div>
+            <div class="item-quantity">
+                <span class="quantity-badge">× {{ item.quantity }}</span>
+            </div>
+            <div class="item-total">
+                {% widthratio item.price 1 item.quantity %} FCFA
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Summary -->
+<div class="summary-grid">
+    <div class="card">
+        <div class="card-header-icon">
+            <div class="header-icon success">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="1" y="3" width="15" height="13"></rect>
+                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                    <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                    <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                </svg>
+            </div>
+            <h2 class="card-title">Livraison</h2>
+        </div>
+        
+        <div class="delivery-info">
+            <div class="delivery-mode-badge {% if order.delivery_mode == 'livraison' %}home-delivery{% endif %}">
+                {{ order.get_delivery_mode_display }}
+            </div>
+            <div class="delivery-fee-row">
+                <span>Frais de livraison</span>
+                <span class="fee-amount">{{ order.delivery_fee | floatformat:0 |intcomma  }} </span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card total-card">
+        <div class="total-header">
+            <div class="stat-icon accent">
+            <span class="currency-text" style="font-weight:700; font-size:1rem;">XAF</span>
+        </div>
+            <span>Montant Total</span>
+        </div>
+        <div class="total-amount">{{ order.total_amount|floatformat:0|intcomma }} </div>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="action-buttons">
+    <button class="btn btn-secondary" onclick="window.print()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8"></rect>
+        </svg>
+        Imprimer
+    </button>
+    
+    <button class="btn btn-danger" onclick="openDeleteModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+        Supprimer
+    </button>
+</div>
+
+<!-- Change Status Modal -->
+<div id="statusModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Changer le statut</h3>
+            <button class="btn-close" onclick="toggleStatusModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        
+        <form method="post" action="{% url 'order_update_status' order.id %}">
+            {% csrf_token %}
+            <div class="status-options">
+                <label class="status-option">
+                    <input type="radio" name="status" value="pending" {% if order.status == 'pending' %}checked{% endif %}>
+                    <div class="status-option-content">
+                        <div class="status-option-icon warning">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 7v5l3 2"></path>
+                            </svg>
+                        </div>
+                        <span>En attente</span>
+                    </div>
+                </label>
+                
+                <label class="status-option">
+                    <input type="radio" name="status" value="in_progress" {% if order.status == 'in_progress' %}checked{% endif %}>
+                    <div class="status-option-content">
+                        <div class="status-option-icon accent">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 12a9 9 0 1 0-3 6.7"></path>
+                                <polyline points="21 12 21 21 12 21"></polyline>
+                            </svg>
+                        </div>
+                        <span>En cours</span>
+                    </div>
+                </label>
+                
+                <label class="status-option">
+                    <input type="radio" name="status" value="delivered" {% if order.status == 'delivered' %}checked{% endif %}>
+                    <div class="status-option-content">
+                        <div class="status-option-icon success">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 6L9 17l-5-5"></path>
+                            </svg>
+                        </div>
+                        <span>Livré</span>
+                    </div>
+                </label>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-block">Mettre à jour</button>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header-warning">
+            <div class="warning-icon-modal">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+            </div>
+            <h3>Supprimer la commande ?</h3>
+            <p>Cette action est irréversible.</p>
+        </div>
+        
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeDeleteModal()">Annuler</button>
+            <form method="post" action="{% url 'order_delete' order.id %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Supprimer</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.back-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: var(--text);
+    transition: all 0.2s;
+}
+
+.back-btn:active { transform: scale(0.95); }
+.back-btn svg { width: 20px; height: 20px; }
+
+.status-card {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05));
+    border-color: rgba(99, 102, 241, 0.2);
+}
+
+.status-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.status-info { display: flex; flex-direction: column; gap: 0.5rem; }
+.status-label { font-size: 0.875rem; color: var(--text-secondary); }
+
+.order-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9375rem;
+}
+
+.status-pending { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+.status-in_progress { background: rgba(6, 182, 212, 0.1); color: var(--accent); }
+.status-delivered { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+
+.btn-change-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-change-status:active { transform: scale(0.97); }
+.btn-change-status svg { width: 16px; height: 16px; }
+
+.status-timeline {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+}
+
+.status-timeline::before {
+    content: '';
+    position: absolute;
+    top: 12px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--border);
+    z-index: 0;
+}
+
+.timeline-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+    position: relative;
+    z-index: 1;
+}
+
+.timeline-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 3px solid var(--border);
+    transition: all 0.3s;
+}
+
+.timeline-item.active .timeline-dot {
+    background: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+}
+
+.timeline-content { text-align: center; }
+
+.timeline-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.timeline-item.active .timeline-title { color: var(--text); }
+.timeline-date { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+.card-header-icon {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.header-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(99, 102, 241, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-icon svg { width: 20px; height: 20px; color: var(--primary); }
+.header-icon.accent { background: rgba(6, 182, 212, 0.1); }
+.header-icon.accent svg { color: var(--accent); }
+.header-icon.success { background: rgba(16, 185, 129, 0.1); }
+.header-icon.success svg { color: var(--success); }
+
+.client-details { display: flex; gap: 1.5rem; align-items: center; }
+
+.client-avatar-large {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.client-info-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.info-group { display: flex; flex-direction: column; gap: 0.25rem; }
+
+.info-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.info-value { font-size: 0.9375rem; font-weight: 600; }
+
+.items-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.item-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    align-items: center;
+}
+
+.item-image {
+    width: 56px;
+    height: 56px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.item-image img { width: 100%; height: 100%; object-fit: cover; }
+.item-image svg { width: 24px; height: 24px; color: var(--primary); }
+
+.item-details { display: flex; flex-direction: column; gap: 0.25rem; }
+.item-name { font-weight: 600; font-size: 0.9375rem; }
+
+.item-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+}
+
+.item-separator { color: var(--text-muted); }
+.item-price { color: var(--primary); font-weight: 600; }
+
+.quantity-badge {
+    padding: 0.375rem 0.75rem;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 6px;
+    font-weight: 600;
+    color: var(--primary);
+    font-size: 0.875rem;
+}
+
+.item-total { font-size: 0.875rem; text-align: right; white-space: nowrap; font-weight: 600; }
+
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+.delivery-info { display: flex; flex-direction: column; gap: 1rem; }
+
+.delivery-mode-badge {
+    display: inline-flex;
+    padding: 0.625rem 1rem;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 8px;
+    color: var(--success);
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.delivery-mode-badge.home-delivery {
+    background: rgba(6, 182, 212, 0.1);
+    border-color: rgba(6, 182, 212, 0.2);
+    color: var(--accent);
+}
+
+.delivery-fee-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-top: 1px solid var(--border);
+}
+
+.fee-amount { font-weight: 600; }
+
+.total-card {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.08));
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+.total-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+}
+
+.total-header svg { width: 20px; height: 20px; }
+
+.total-amount {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.active { display: flex; }
+
+.modal-content {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2rem;
+    max-width: 500px;
+    width: 90%;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.modal-header h3 { font-size: 1.25rem; }
+
+.btn-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-close svg { width: 18px; height: 18px; }
+
+.status-options { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; }
+.status-option input[type="radio"] { display: none; }
+
+.status-option-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.status-option input[type="radio"]:checked + .status-option-content {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.status-option-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.status-option-icon.warning { background: rgba(245, 158, 11, 0.1); }
+.status-option-icon.accent { background: rgba(6, 182, 212, 0.1); }
+.status-option-icon.success { background: rgba(16, 185, 129, 0.1); }
+
+.modal-header-warning { text-align: center; margin-bottom: 1.5rem; }
+
+.warning-icon-modal {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 1rem;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.warning-icon-modal svg { width: 28px; height: 28px; color: var(--error); }
+.modal-header-warning h3 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+.modal-header-warning p { color: var(--text-secondary); }
+
+.modal-actions { display: flex; gap: 0.75rem; }
+.modal-actions .btn { flex: 1; }
+.btn-block { width: 100%; }
+
+@media (max-width: 768px) {
+    .summary-grid { grid-template-columns: 1fr; }
+    .action-buttons { grid-template-columns: 1fr; }
+    .item-row { grid-template-columns: auto 1fr; }
+    .item-quantity, .item-total { grid-column: 2; }
+    .client-details { flex-direction: column; align-items: flex-start; }
+}
+</style>
+
+<script>
+function toggleStatusModal() {
+    document.getElementById('statusModal').classList.toggle('active');
+}
+
+function openDeleteModal() {
+    document.getElementById('deleteModal').classList.add('active');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('active');
+}
+
+document.querySelectorAll('.modal').forEach(modal => {
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.classList.remove('active');
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% block fab %}{% endblock %}

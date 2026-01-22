@@ -1,0 +1,670 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nouvelle Commande - CosmoSaaS{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 1.5rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+        <a href="{% url 'order_list' %}" class="back-btn">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="page-title">Nouvelle Commande</h1>
+    </div>
+    <p class="page-subtitle">Créez une nouvelle commande pour un client</p>
+</div>
+
+<form method="post" id="orderForm">
+    {% csrf_token %}
+    
+    <!-- Client Selection -->
+    <div class="card">
+        <h3 class="section-title">
+            <i class="fas fa-user"></i> Informations Client
+        </h3>
+        
+        <div class="form-group">
+            <label class="form-label">Client *</label>
+            <select name="client" id="clientSelect" class="form-input" required>
+                <option value="">Sélectionnez un client</option>
+                {% for client in clients %}
+                <option value="{{ client.id }}" data-phone="{{ client.phone }}" data-area="{{ client.area }}">
+                    {{ client.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div id="clientInfo" class="client-info" style="display: none;">
+            <div class="info-row">
+                <i class="fas fa-phone"></i>
+                <span id="clientPhone"></span>
+            </div>
+            <div class="info-row">
+                <i class="fas fa-map-marker-alt"></i>
+                <span id="clientArea"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Products Table -->
+    <div class="card">
+        <h3 class="section-title">
+            <i class="fas fa-shopping-cart"></i> Produits
+        </h3>
+
+        <div class="table-responsive">
+            <table class="products-table">
+                <thead>
+                    <tr>
+                        <th>Produit</th>
+                        <th style="width: 100px;">Quantité</th>
+                        <th style="width: 120px;">Prix unitaire</th>
+                        <th style="width: 120px;">Total</th>
+                        <th style="width: 50px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="productList">
+                    <!-- Products will be added here -->
+                </tbody>
+            </table>
+        </div>
+
+        <button type="button" class="btn-add" onclick="addProductRow()">
+            <i class="fas fa-plus"></i> Ajouter un produit
+        </button>
+    </div>
+
+    <!-- Delivery Info -->
+    <div class="card">
+        <h3 class="section-title">
+            <i class="fas fa-truck"></i> Livraison
+        </h3>
+
+        <div class="form-group">
+            <label class="form-label">Mode de livraison *</label>
+            <div class="delivery-options">
+                <label class="delivery-option">
+                    <input type="radio" name="delivery_mode" value="retrait" checked>
+                    <span><i class="fas fa-store"></i> Retrait en magasin (Gratuit)</span>
+                </label>
+
+                <label class="delivery-option">
+                    <input type="radio" name="delivery_mode" value="livraison">
+                    <span><i class="fas fa-truck"></i> Livraison à domicile</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group" id="deliveryFeeGroup" style="display: none;">
+            <label class="form-label">Frais de livraison (FCFA)</label>
+            <input type="number" name="delivery_fee" id="deliveryFee" class="form-input" value="0" min="0" step="100">
+        </div>
+    </div>
+
+    <!-- Order Summary -->
+    <div class="card summary-card">
+        <h3 class="section-title">
+            <i class="fas fa-receipt"></i> Résumé
+        </h3>
+        
+        <div class="summary-row">
+            <span>Sous-total</span>
+            <span id="subtotal">0 FCFA</span>
+        </div>
+        <div class="summary-row">
+            <span>Frais de livraison</span>
+            <span id="deliveryFeeDisplay">0 FCFA</span>
+        </div>
+        <div class="summary-row total">
+            <span>Total</span>
+            <span id="total">0 FCFA</span>
+        </div>
+    </div>
+
+    <!-- Submit Button -->
+    <button type="submit" class="btn btn-primary btn-block">
+        <i class="fas fa-save"></i> Créer la commande
+    </button>
+</form>
+
+<style>
+.back-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: var(--text);
+    transition: all 0.2s;
+}
+
+.back-btn:active {
+    transform: scale(0.95);
+}
+
+.section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.section-title i {
+    color: var(--primary);
+    font-size: 0.875rem;
+}
+
+.form-input[type="number"],
+.form-input,
+select.form-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.625rem 0.875rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    width: 100%;
+    transition: all 0.2s;
+}
+
+.form-input:focus,
+select.form-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.client-info {
+    display: flex;
+    gap: 1.5rem;
+    padding: 0.875rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-top: 1rem;
+}
+
+.info-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.info-row i {
+    color: var(--primary);
+    font-size: 0.75rem;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+
+.products-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.products-table thead {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.products-table th {
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border);
+}
+
+.products-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+
+.products-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.products-table select,
+.products-table input {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.product-price {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.btn-remove {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--error);
+}
+
+.btn-remove:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.btn-add {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px dashed var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.btn-add:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.delivery-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.delivery-option {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.delivery-option input[type="radio"] {
+    margin-right: 0.75rem;
+}
+
+.delivery-option span {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    flex: 1;
+    transition: all 0.2s;
+}
+
+.delivery-option input[type="radio"]:checked + span {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.05);
+    color: var(--primary);
+}
+
+.delivery-option i {
+    font-size: 0.875rem;
+}
+
+.summary-card {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05));
+    border-color: rgba(99, 102, 241, 0.2);
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.625rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.875rem;
+}
+
+.summary-row:last-child {
+    border-bottom: none;
+}
+
+.summary-row.total {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--primary);
+    padding-top: 0.75rem;
+    margin-top: 0.5rem;
+    border-top: 2px solid var(--border);
+}
+
+.btn-block {
+    width: 100%;
+    padding: 0.875rem;
+    font-size: 0.9375rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* Select2 Custom Styling - FIXED */
+.select2-container--default .select2-selection--single {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 6px !important;
+    height: 42px !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    color: var(--text) !important;
+    line-height: 40px !important;
+    padding-left: 12px !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__placeholder {
+    color: #888 !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 40px !important;
+    right: 8px !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow b {
+    border-color: var(--text-secondary) transparent transparent transparent !important;
+}
+
+.select2-dropdown {
+    background: #1a1a2e !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 6px !important;
+    margin-top: 4px !important;
+}
+
+.select2-search--dropdown {
+    padding: 8px !important;
+    background: #1a1a2e !important;
+}
+
+.select2-container--default .select2-search--dropdown .select2-search__field {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
+    padding: 8px 12px !important;
+    border-radius: 4px !important;
+    font-size: 0.875rem !important;
+}
+
+.select2-container--default .select2-search--dropdown .select2-search__field:focus {
+    outline: none !important;
+    border-color: var(--primary) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.select2-results {
+    background: #1a1a2e !important;
+}
+
+.select2-results__options {
+    max-height: 300px !important;
+}
+
+.select2-container--default .select2-results__option {
+    background: #1a1a2e !important;
+    color: #e0e0e0 !important;
+    padding: 10px 12px !important;
+    font-size: 0.875rem !important;
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background: rgba(99, 102, 241, 0.2) !important;
+    color: #ffffff !important;
+}
+
+.select2-container--default .select2-results__option[aria-selected=true] {
+    background: rgba(99, 102, 241, 0.15) !important;
+    color: var(--primary) !important;
+}
+
+.select2-container {
+    width: 100% !important;
+}
+
+.select2-container--default.select2-container--focus .select2-selection--single {
+    border-color: var(--primary) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.select2-container--default.select2-container--open .select2-selection--single {
+    border-color: var(--primary) !important;
+}
+
+/* Fix z-index for dropdown */
+.select2-container--open {
+    z-index: 9999 !important;
+}
+
+.select2-dropdown {
+    z-index: 9999 !important;
+}
+
+@media (max-width: 640px) {
+    .table-responsive {
+        overflow-x: scroll;
+    }
+    
+    .products-table {
+        min-width: 600px;
+    }
+    
+    .client-info {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+}
+</style>
+
+<!-- Font Awesome CDN -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<!-- Select2 CSS -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+
+<!-- jQuery (required for Select2) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<!-- Select2 JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+<script id="products-data" type="application/json">
+{{ products_json|safe }}
+</script>
+
+<script>
+const products = JSON.parse(document.getElementById('products-data').textContent || '[]');
+let productCounter = 0;
+
+// Initialize jQuery and Select2
+$(document).ready(function() {
+    // Initialize Select2 for client select with search enabled
+    $('#clientSelect').select2({
+        placeholder: 'Sélectionnez un client',
+        allowClear: true,
+        width: '100%',
+        minimumResultsForSearch: 0, // Always show search box
+        language: {
+            noResults: function() {
+                return "Aucun résultat trouvé";
+            },
+            searching: function() {
+                return "Recherche en cours...";
+            }
+        }
+    });
+
+    // Update client info when selection changes
+    $('#clientSelect').on('select2:select', function(e) {
+        const data = e.params.data;
+        const selectedOption = $(this).find('option[value="' + data.id + '"]');
+        const clientInfo = document.getElementById('clientInfo');
+        
+        document.getElementById('clientPhone').textContent = selectedOption.data('phone');
+        document.getElementById('clientArea').textContent = selectedOption.data('area') || 'Non spécifié';
+        clientInfo.style.display = 'flex';
+    });
+
+    $('#clientSelect').on('select2:clear', function() {
+        document.getElementById('clientInfo').style.display = 'none';
+    });
+
+    // Add first product row
+    addProductRow();
+});
+
+// Delivery mode
+document.querySelectorAll('input[name="delivery_mode"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const deliveryFeeGroup = document.getElementById('deliveryFeeGroup');
+        if (this.value === 'livraison') {
+            deliveryFeeGroup.style.display = 'block';
+        } else {
+            deliveryFeeGroup.style.display = 'none';
+            document.getElementById('deliveryFee').value = 0;
+        }
+        updateTotal();
+    });
+});
+
+// Delivery fee change
+document.getElementById('deliveryFee').addEventListener('input', updateTotal);
+
+// Add product row
+function addProductRow() {
+    productCounter++;
+    const productList = document.getElementById('productList');
+    
+    const row = document.createElement('tr');
+    row.id = `product-row-${productCounter}`;
+    
+    const selectId = `product-select-${productCounter}`;
+    
+    row.innerHTML = `
+        <td>
+            <select name="products[]" id="${selectId}" class="form-input product-select" data-row="${productCounter}" required>
+                <option value="">Sélectionnez un produit</option>
+                ${products.map(p => `<option value="${p.id}" data-price="${p.price}">${p.name} - ${p.price} FCFA (Stock: ${p.stock})</option>`).join('')}
+            </select>
+        </td>
+        <td>
+            <input type="number" name="quantities[]" class="form-input quantity-input" data-row="${productCounter}" placeholder="Qté" min="1" value="1" required>
+        </td>
+        <td>
+            <span class="unit-price" id="unit-price-${productCounter}">0 FCFA</span>
+        </td>
+        <td>
+            <span class="product-price" id="price-${productCounter}">0 FCFA</span>
+        </td>
+        <td style="text-align: center;">
+            <button type="button" class="btn-remove" onclick="removeProductRow(${productCounter})">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    `;
+    
+    productList.appendChild(row);
+    
+    // Initialize Select2 for this product select with search always visible
+    $(`#${selectId}`).select2({
+        placeholder: 'Sélectionnez un produit',
+        allowClear: true,
+        width: '100%',
+        minimumResultsForSearch: 0, // Always show search box
+        dropdownParent: $('body'), // Fix dropdown positioning
+        language: {
+            noResults: function() {
+                return "Aucun résultat trouvé";
+            },
+            searching: function() {
+                return "Recherche en cours...";
+            }
+        }
+    });
+
+    // Add event listeners
+    $(`#${selectId}`).on('select2:select', function() {
+        updateRowPrice(productCounter);
+    });
+    
+    row.querySelector('.quantity-input').addEventListener('input', function() {
+        updateRowPrice(productCounter);
+    });
+}
+
+function removeProductRow(id) {
+    // Destroy Select2 before removing the row
+    $(`#product-select-${id}`).select2('destroy');
+    document.getElementById(`product-row-${id}`).remove();
+    updateTotal();
+}
+
+function updateRowPrice(rowId) {
+    const select = $(`#product-select-${rowId}`);
+    const quantity = document.querySelector(`.quantity-input[data-row="${rowId}"]`);
+    const unitPriceDisplay = document.getElementById(`unit-price-${rowId}`);
+    const priceDisplay = document.getElementById(`price-${rowId}`);
+    
+    const selectedOption = select.find(':selected');
+    const price = parseFloat(selectedOption.data('price')) || 0;
+    const qty = parseInt(quantity.value) || 0;
+    const total = price * qty;
+    
+    unitPriceDisplay.textContent = `${price.toLocaleString()} FCFA`;
+    priceDisplay.textContent = `${total.toLocaleString()} FCFA`;
+    updateTotal();
+}
+
+function updateTotal() {
+    let subtotal = 0;
+    
+    document.querySelectorAll('#productList tr').forEach(row => {
+        const rowId = row.id.replace('product-row-', '');
+        const select = $(`#product-select-${rowId}`);
+        const quantity = row.querySelector('.quantity-input');
+        
+        if (select.length && quantity && select.val()) {
+            const selectedOption = select.find(':selected');
+            const price = parseFloat(selectedOption.data('price')) || 0;
+            const qty = parseInt(quantity.value) || 0;
+            subtotal += price * qty;
+        }
+    });
+    
+    const deliveryFee = parseFloat(document.getElementById('deliveryFee').value) || 0;
+    const total = subtotal + deliveryFee;
+    
+    document.getElementById('subtotal').textContent = `${subtotal.toLocaleString()} FCFA`;
+    document.getElementById('deliveryFeeDisplay').textContent = `${deliveryFee.toLocaleString()} FCFA`;
+    document.getElementById('total').textContent = `${total.toLocaleString()} FCFA`;
+}
+</script>
+
+{% endblock %}
+
+{% block fab %}{% endblock %}

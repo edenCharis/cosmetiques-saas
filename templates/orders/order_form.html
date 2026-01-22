@@ -1,0 +1,870 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nouvelle Commande - CosmoSaaS{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 1.5rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+        <a href="{% url 'order_list' %}" class="back-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </a>
+        <h1 class="page-title">Nouvelle Commande</h1>
+    </div>
+    <p class="page-subtitle">Créez une nouvelle commande pour un client</p>
+</div>
+
+<form method="post" id="orderForm">
+    {% csrf_token %}
+    
+    <!-- Client Selection -->
+    <div class="card">
+        <div class="card-header-icon">
+            <div class="header-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </div>
+            <h2 class="card-title">Informations Client</h2>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Client *</label>
+            <div style="display: flex; gap: 0.75rem;">
+                <select name="client" id="clientSelect" class="form-input" required style="flex: 1;">
+                    <option value="">Sélectionnez un client</option>
+                    {% for client in clients %}
+                    <option value="{{ client.id }}" data-phone="{{ client.phone }}" data-area="{{ client.area }}">
+                        {{ client.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <button type="button" class="btn-add-client" onclick="openClientModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Nouveau client
+                </button>
+            </div>
+        </div>
+
+        <div id="clientInfo" class="client-info" style="display: none;">
+            <div class="info-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                </svg>
+                <span id="clientPhone"></span>
+            </div>
+            <div class="info-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                <span id="clientArea"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Products Selection -->
+    <div class="card">
+        <div class="card-header-icon">
+            <div class="header-icon accent">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+            </div>
+            <h2 class="card-title">Produits</h2>
+        </div>
+
+        <div id="productList" class="product-selection-list">
+            <!-- Products will be added here dynamically -->
+        </div>
+
+        <button type="button" class="btn-add-product" onclick="addProductRow()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Ajouter un produit
+        </button>
+    </div>
+
+    <!-- Delivery Info -->
+    <div class="card">
+        <div class="card-header-icon">
+            <div class="header-icon success">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="1" y="3" width="15" height="13"></rect>
+                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                    <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                    <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                </svg>
+            </div>
+            <h2 class="card-title">Livraison</h2>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Mode de livraison *</label>
+            <div class="delivery-options">
+                <label class="delivery-option">
+                    <input type="radio" name="delivery_mode" value="retrait" checked>
+                    <div class="option-content">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                        <div>
+                            <div class="option-title">Retrait en magasin</div>
+                            <div class="option-subtitle">Gratuit</div>
+                        </div>
+                    </div>
+                </label>
+
+                <label class="delivery-option">
+                    <input type="radio" name="delivery_mode" value="livraison">
+                    <div class="option-content">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="1" y="3" width="15" height="13"></rect>
+                            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                            <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                            <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                        </svg>
+                        <div>
+                            <div class="option-title">Livraison à domicile</div>
+                            <div class="option-subtitle">Frais variables</div>
+                        </div>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group" id="deliveryFeeGroup" style="display: none;">
+            <label class="form-label">Frais de livraison (FCFA)</label>
+            <input type="number" name="delivery_fee" id="deliveryFee" class="form-input" value="0" min="0" step="100">
+        </div>
+    </div>
+
+    <!-- Order Summary -->
+    <div class="card summary-card">
+        <h3 class="card-title">Résumé</h3>
+        
+        <div class="summary-row">
+            <span>Sous-total</span>
+            <span id="subtotal">0 FCFA</span>
+        </div>
+        <div class="summary-row">
+            <span>Frais de livraison</span>
+            <span id="deliveryFeeDisplay">0 FCFA</span>
+        </div>
+        <div class="summary-row total">
+            <span>Total</span>
+            <span id="total">0 FCFA</span>
+        </div>
+    </div>
+
+    <!-- Submit Button -->
+    <button type="submit" class="btn btn-primary btn-block">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+            <polyline points="7 3 7 8 15 8"></polyline>
+        </svg>
+        Créer la commande
+    </button>
+</form>
+
+<!-- Modal Add Client -->
+<div id="clientModal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3>Nouveau Client</h3>
+            <button type="button" class="modal-close" onclick="closeClientModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        
+        <form id="clientForm" onsubmit="return false;">
+            <div class="form-group">
+                <label class="form-label">Nom complet *</label>
+                <input type="text" id="newClientName" class="form-input" placeholder="Ex: Jean Dupont" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Téléphone *</label>
+                <input type="tel" id="newClientPhone" class="form-input" placeholder="Ex: +242 06 123 4567" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Quartier / Zone</label>
+                <input type="text" id="newClientArea" class="form-input" placeholder="Ex: Moungali, Poto-Poto...">
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeClientModal()">Annuler</button>
+                <button type="button" class="btn btn-primary" onclick="saveNewClient()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Enregistrer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.back-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: var(--text);
+    transition: all 0.2s;
+}
+
+.back-btn:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.back-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.card-header-icon {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.header-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(99, 102, 241, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-icon svg {
+    width: 20px;
+    height: 20px;
+    color: var(--primary);
+}
+
+.header-icon.accent {
+    background: rgba(6, 182, 212, 0.1);
+}
+
+.header-icon.accent svg {
+    color: var(--accent);
+}
+
+.header-icon.success {
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.header-icon.success svg {
+    color: var(--success);
+}
+
+.btn-add-client {
+    padding: 0.75rem 1rem;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 8px;
+    color: var(--success);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+.btn-add-client:hover {
+    background: rgba(16, 185, 129, 0.15);
+}
+
+.btn-add-client svg {
+    width: 18px;
+    height: 18px;
+}
+
+.form-input[type="number"],
+.form-input,
+select.form-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    width: 100%;
+    transition: all 0.2s;
+}
+
+.form-input:focus,
+select.form-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+select.form-input option {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    padding: 0.75rem;
+}
+
+select.form-input option:hover,
+select.form-input option:checked {
+    background: rgba(99, 102, 241, 0.2);
+    color: #ffffff;
+}
+
+select.form-input option[value=""] {
+    color: #888;
+}
+
+.client-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-top: 1rem;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.info-item svg {
+    color: var(--text-muted);
+}
+
+.product-selection-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.product-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    align-items: start;
+}
+
+.product-row select,
+.product-row input {
+    margin-bottom: 0;
+}
+
+.quantity-input {
+    width: 80px;
+}
+
+.product-price {
+    display: flex;
+    align-items: center;
+    height: 48px;
+    font-weight: 600;
+    color: var(--primary);
+    white-space: nowrap;
+    min-width: 100px;
+}
+
+.btn-remove {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-remove:active {
+    transform: scale(0.95);
+}
+
+.btn-remove svg {
+    width: 18px;
+    height: 18px;
+    color: var(--error);
+}
+
+.btn-add-product {
+    width: 100%;
+    padding: 0.875rem;
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-add-product:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.btn-add-product svg {
+    width: 18px;
+    height: 18px;
+}
+
+.delivery-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.delivery-option {
+    cursor: pointer;
+}
+
+.delivery-option input[type="radio"] {
+    display: none;
+}
+
+.option-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.delivery-option input[type="radio"]:checked + .option-content {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.option-content svg {
+    width: 28px;
+    height: 28px;
+    color: var(--text-secondary);
+}
+
+.delivery-option input[type="radio"]:checked + .option-content svg {
+    color: var(--primary);
+}
+
+.option-title {
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.option-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+}
+
+.summary-card {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05));
+    border-color: rgba(99, 102, 241, 0.2);
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9375rem;
+}
+
+.summary-row:last-child {
+    border-bottom: none;
+}
+
+.summary-row.total {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary);
+    padding-top: 1rem;
+    margin-top: 0.5rem;
+    border-top: 2px solid var(--border);
+}
+
+.btn-block {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1rem;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-large {
+    max-width: 500px;
+    width: 90%;
+}
+
+.modal-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text);
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--error);
+    color: var(--error);
+}
+
+.modal-close svg {
+    width: 18px;
+    height: 18px;
+}
+
+@media (max-width: 640px) {
+    .product-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .quantity-input, .btn-remove {
+        width: 100%;
+    }
+    
+    .delivery-options {
+        grid-template-columns: 1fr;
+    }
+    
+    .btn-add-client {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+{{ products|json_script:"products-data" }}
+
+<script>
+const products = JSON.parse(document.getElementById('products-data').textContent || '[]');
+let productCounter = 0;
+
+// Client selection
+document.getElementById('clientSelect').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const clientInfo = document.getElementById('clientInfo');
+    
+    if (this.value) {
+        document.getElementById('clientPhone').textContent = selectedOption.dataset.phone;
+        document.getElementById('clientArea').textContent = selectedOption.dataset.area;
+        clientInfo.style.display = 'flex';
+    } else {
+        clientInfo.style.display = 'none';
+    }
+});
+
+// Delivery mode
+document.querySelectorAll('input[name="delivery_mode"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const deliveryFeeGroup = document.getElementById('deliveryFeeGroup');
+        if (this.value === 'livraison') {
+            deliveryFeeGroup.style.display = 'block';
+        } else {
+            deliveryFeeGroup.style.display = 'none';
+            document.getElementById('deliveryFee').value = 0;
+        }
+        updateTotal();
+    });
+});
+
+document.getElementById('deliveryFee').addEventListener('input', updateTotal);
+
+// Product management
+function addProductRow() {
+    productCounter++;
+    const productList = document.getElementById('productList');
+    
+    const row = document.createElement('div');
+    row.className = 'product-row';
+    row.id = `product-row-${productCounter}`;
+    
+    row.innerHTML = `
+        <select name="products[]" class="form-input product-select" data-row="${productCounter}" required>
+            <option value="">Sélectionnez un produit</option>
+            ${products.map(p => `<option value="${p.id}" data-price="${p.price}">${p.name} - ${p.price} FCFA (Stock: ${p.stock})</option>`).join('')}
+        </select>
+        <input type="number" name="quantities[]" class="form-input quantity-input" data-row="${productCounter}" placeholder="Qté" min="1" value="1" required>
+        <div class="product-price" id="price-${productCounter}">0 FCFA</div>
+        <button type="button" class="btn-remove" onclick="removeProductRow(${productCounter})">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    `;
+    
+    productList.appendChild(row);
+    
+    row.querySelector('.product-select').addEventListener('change', updateRowPrice);
+    row.querySelector('.quantity-input').addEventListener('input', updateRowPrice);
+}
+
+function removeProductRow(id) {
+    document.getElementById(`product-row-${id}`).remove();
+    updateTotal();
+}
+
+function updateRowPrice(e) {
+    const row = e.target.dataset.row;
+    const select = document.querySelector(`.product-select[data-row="${row}"]`);
+    const quantity = document.querySelector(`.quantity-input[data-row="${row}"]`);
+    const priceDisplay = document.getElementById(`price-${row}`);
+    
+    const selectedOption = select.options[select.selectedIndex];
+    const price = parseFloat(selectedOption.dataset.price) || 0;
+    const qty = parseInt(quantity.value) || 0;
+    const total = price * qty;
+    
+    priceDisplay.textContent = `${total.toLocaleString()} FCFA`;
+    updateTotal();
+}
+
+function updateTotal() {
+    let subtotal = 0;
+    
+    document.querySelectorAll('.product-row').forEach(row => {
+        const select = row.querySelector('.product-select');
+        const quantity = row.querySelector('.quantity-input');
+        
+        if (select && quantity && select.value) {
+            const selectedOption = select.options[select.selectedIndex];
+            const price = parseFloat(selectedOption.dataset.price) || 0;
+            const qty = parseInt(quantity.value) || 0;
+            subtotal += price * qty;
+        }
+    });
+    
+    const deliveryFee = parseFloat(document.getElementById('deliveryFee').value) || 0;
+    const total = subtotal + deliveryFee;
+    
+    document.getElementById('subtotal').textContent = `${subtotal.toLocaleString()} FCFA`;
+    document.getElementById('deliveryFeeDisplay').textContent = `${deliveryFee.toLocaleString()} FCFA`;
+    document.getElementById('total').textContent = `${total.toLocaleString()} FCFA`;
+}
+
+// Client Modal
+function openClientModal() {
+    document.getElementById('clientModal').classList.add('active');
+}
+
+function closeClientModal() {
+    document.getElementById('clientModal').classList.remove('active');
+    document.getElementById('clientForm').reset();
+}
+
+function saveNewClient() {
+    const name = document.getElementById('newClientName').value.trim();
+    const phone = document.getElementById('newClientPhone').value.trim();
+    const area = document.getElementById('newClientArea').value.trim();
+    
+    if (!name || !phone) {
+        alert('Veuillez remplir le nom et le téléphone');
+        return;
+    }
+    
+    // Send AJAX request to save client
+    fetch('{% url "client_create_ajax" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({ name, phone, area })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Add new client to select
+            const select = document.getElementById('clientSelect');
+            const option = document.createElement('option');
+            option.value = data.client.id;
+            option.dataset.phone = data.client.phone;
+            option.dataset.area = data.client.area;
+            option.textContent = data.client.name;
+            option.selected = true;
+            select.appendChild(option);
+            
+            // Trigger change event to show client info
+            select.dispatchEvent(new Event('change'));
+            
+            // Close modal
+            closeClientModal();
+            
+            // Show success message
+            showNotification('Client ajouté avec succès!', 'success');
+        } else {
+            showNotification(data.error || 'Erreur lors de l\'ajout du client', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Erreur lors de l\'ajout du client', 'error');
+    });
+}
+
+function showNotification(message, type) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            ${type === 'success' ? `
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            ` : `
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+            `}
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => notification.classList.add('show'), 10);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Close modal on outside click
+document.getElementById('clientModal').addEventListener('click', (e) => {
+    if (e.target.id === 'clientModal') {
+        closeClientModal();
+    }
+});
+
+// Add first product row on load
+addProductRow();
+</script>
+
+<style>
+.notification {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    z-index: 2000;
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification-success {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: var(--success);
+}
+
+.notification-error {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: var(--error);
+}
+
+@media (max-width: 640px) {
+    .notification {
+        top: 1rem;
+        right: 1rem;
+        left: 1rem;
+    }
+}
+</style>
+
+{% endblock %}
+
+{% block fab %}{% endblock %}

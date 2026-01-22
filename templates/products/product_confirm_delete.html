@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Supprimer un produit{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 2rem auto;">
+    <div class="card">
+        <h2 style="margin-bottom: 1.5rem; color: #e74c3c;">⚠️ Confirmer la suppression</h2>
+        
+        <p style="margin-bottom: 1.5rem;">
+            Êtes-vous sûr de vouloir supprimer le produit <strong>{{ product.name }}</strong> ?
+        </p>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div style="display: flex; gap: 1rem;">
+                <button type="submit" class="btn" style="background: #e74c3c; color: white;">
+                    Oui, supprimer
+                </button>
+                <a href="{% url 'product_list' %}" class="btn" style="background: #95a5a6; color: white;">
+                    Annuler
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

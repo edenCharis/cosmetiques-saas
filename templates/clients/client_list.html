@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Clients{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+    .card { padding: 1rem; }
+    .actions .btn { margin-right: 0.25rem; }
+    .view-header { display:flex; justify-content:space-between; align-items:center; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; }
+    @media (max-width:758px){ .view-header { flex-direction:column; align-items:flex-start; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="view-header">
+    <h2>Clients</h2>
+    <div>
+        <a href="{% url 'client_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Ajouter
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    {% if messages %}
+        <div>
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} py-2">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if clients %}
+        <div class="table-responsive">
+            <table id="clientsTable" class="display table table-striped" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nom</th>
+                     
+                        <th>Téléphone</th>
+                        <th>Quartier</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for client in clients %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ client.name }}</td>
+                       
+                        <td>{{ client.phone }}</td>
+                         <td>{{ client.area }}</td>
+                        <td class="text-center actions">
+                           
+                        
+
+                            <button type="button"
+                                class="btn btn-sm btn-danger delete-btn"
+                                data-delete-url="{% url 'client_delete' client.id %}"
+                                data-client-name="{{ client.name }}"
+                                style="color: white; background-color: #e74c3c;"
+                                title="Supprimer">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p style="text-align: center; padding: 2rem; color: #999;">
+            Aucun client pour le moment. Commencez par en ajouter un !
+        </p>
+    {% endif %}
+</div>
+
+<!-- Delete confirmation modal -->
+<div id="deleteModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>Confirmer la suppression</h3>
+        </div>
+        <div class="modal-body">
+            <p>Êtes-vous sûr de vouloir supprimer le client <strong id="clientName"></strong> ?</p>
+            <p style="color:#e74c3c;">Cette action est irréversible.</p>
+        </div>
+        <div class="modal-footer" style="display:flex; gap:1rem; justify-content:flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Annuler</button>
+            <form id="deleteForm" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Supprimer</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script>
+    let clientsTable;
+    $(document).ready(function(){
+        clientsTable = $('#clientsTable').DataTable({
+            language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/fr-FR.json' },
+            order: [[1,'asc']],
+            pageLength: 10,
+            columnDefs: [{ orderable: false, targets: 4 }]
+        });
+
+        // delete buttons
+        $('.delete-btn').on('click', function(){
+            const url = $(this).data('delete-url');
+            const name = $(this).data('client-name');
+            $('#clientName').text(name);
+            $('#deleteForm').attr('action', url);
+            $('#deleteModal').css('display','flex');
+        });
+    });
+
+    function closeDeleteModal(){
+        $('#deleteModal').hide();
+    }
+    // close modal on outside click / Esc
+    $(document).on('click', function(e){
+        const modal = $('#deleteModal')[0];
+        if (modal && e.target === modal) closeDeleteModal();
+    });
+    $(document).on('keydown', function(e){
+        if (e.key === 'Escape') closeDeleteModal();
+    });
+</script>
+{% endblock %}
