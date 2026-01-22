@@ -378,10 +378,27 @@
             flex: 1;
         }
 
-        @media (min-width: 768px) {
-            .stats-grid { grid-template-columns: repeat(4, 1fr); }
-            .bottom-nav { display: none; }
-            .fab { bottom: 2rem; right: 2rem; }
+        /* Tablet and Desktop adjustments */
+        @media (min-width: 769px) {
+            .stats-grid { 
+                grid-template-columns: repeat(4, 1fr); 
+            }
+            
+            .fab { 
+                bottom: 2rem; 
+                right: 2rem; 
+            }
+            
+            /* Adjust main content for sidebar */
+            .main-content {
+                margin-left: 0;
+                padding: 2rem;
+                padding-bottom: 2rem;
+            }
+            
+            body {
+                margin-left: 240px;
+            }
         }
     </style>
     
